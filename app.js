@@ -2,7 +2,7 @@
   const $ = s => document.querySelector(s);
   const els={input:$('#searchInput'),clear:$('#clearBtn'),sheet:$('#placeSheet'),name:$('#placeName'),address:$('#placeAddress'),toast:$('#toast'),status:$('#locationStatus')};
   let map,places,destination,destMarker,myMarker,myLocation,mode='traffic';
-  const zhPlaces={'首尔站':'서울역','明洞':'명동','景福宫':'경복궁','弘大':'홍대입구','弘大入口':'홍대입구','海云台':'해운대','釜山海云台':'해운대','仁川机场':'인천국제공항','江南站':'강남역','东大门':'동대문','南山塔':'남산서울타워'};
+  const zhPlaces={'首尔站':'서울역','明洞':'명동역','景福宫':'경복궁','弘大':'홍대입구역','弘大入口':'홍대입구역','海云台':'해운대역','釜山海云台':'해운대해수욕장','仁川机场':'인천국제공항 제1여객터미널','江南站':'강남역','东大门':'동대문역','南山塔':'N서울타워'};
   function toast(msg){els.toast.textContent=msg;els.toast.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>els.toast.classList.add('hidden'),2600);}
   function init(){
     if(!window.kakao?.maps) return toast('Kakao 地图加载失败，请确认域名设置');
@@ -36,11 +36,10 @@
   }
   function navigate(){
     if(!destination)return toast('请先搜索目的地');
-    const to=`${encodeURIComponent(destination.name)},${destination.lat},${destination.lng}`;
-    let url;
-    if(myLocation){const from=`${encodeURIComponent('我的位置')},${myLocation.lat},${myLocation.lng}`;url=`https://map.kakao.com/link/by/${mode}/${from}/${to}`;}
-    else url=`https://map.kakao.com/link/to/${to}`;
-    location.href=url;
+    const googleMode=mode==='traffic'?'transit':mode==='car'?'driving':mode==='bicycle'?'bicycling':'walking';
+    const origin=myLocation?`&origin=${myLocation.lat},${myLocation.lng}`:'';
+    const url=`https://www.google.com/maps/dir/?api=1${origin}&destination=${destination.lat},${destination.lng}&travelmode=${googleMode}&hl=zh-CN`;
+    window.location.assign(url);
   }
   $('#searchForm').addEventListener('submit',e=>{e.preventDefault();search(els.input.value);});
   els.input.addEventListener('input',()=>els.clear.classList.toggle('hidden',!els.input.value));
@@ -52,6 +51,6 @@
   $('#centerBtn').addEventListener('click',()=>destination&&map.setCenter(new kakao.maps.LatLng(destination.lat,destination.lng)));
   $('#naverBtn').addEventListener('click',navigate);
   $('#savedBtn').addEventListener('click',()=>toast('收藏功能将在下一版加入'));
-  $('#helpBtn').addEventListener('click',()=>toast('先定位，再搜索目的地，最后选择出行方式'));
+  $('#helpBtn').addEventListener('click',()=>toast('先定位，再搜索目的地；导航会在中文网页中打开'));
   init();
 })();
