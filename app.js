@@ -2,6 +2,7 @@
   const $ = s => document.querySelector(s);
   const els={input:$('#searchInput'),clear:$('#clearBtn'),sheet:$('#placeSheet'),name:$('#placeName'),address:$('#placeAddress'),toast:$('#toast'),status:$('#locationStatus')};
   let map,places,destination,destMarker,myMarker,myLocation,mode='traffic';
+  const zhPlaces={'首尔站':'서울역','明洞':'명동','景福宫':'경복궁','弘大':'홍대입구','弘大入口':'홍대입구','海云台':'해운대','釜山海云台':'해운대','仁川机场':'인천국제공항','江南站':'강남역','东大门':'동대문','南山塔':'남산서울타워'};
   function toast(msg){els.toast.textContent=msg;els.toast.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>els.toast.classList.add('hidden'),2600);}
   function init(){
     if(!window.kakao?.maps) return toast('Kakao 地图加载失败，请确认域名设置');
@@ -19,7 +20,8 @@
   function search(q){
     q=q.trim();if(!q)return toast('请输入目的地');if(!places)return toast('地图仍在加载，请稍候');
     els.input.value=q;els.clear.classList.remove('hidden');toast('正在搜索目的地…');
-    places.keywordSearch(q,(data,status)=>{
+    const kakaoQuery=zhPlaces[q]||q;
+    places.keywordSearch(kakaoQuery,(data,status)=>{
       if(status!==kakao.maps.services.Status.OK||!data.length)return toast('没有找到，请尝试输入韩文地点名');
       const p=data[0];setDestination({name:p.place_name||q,address:p.road_address_name||p.address_name,lat:Number(p.y),lng:Number(p.x),id:p.id});
     });
