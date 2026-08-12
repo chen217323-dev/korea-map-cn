@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>韩国地图 · 中文版</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <div id="map" aria-label="韩国地图"></div>
+
+    <header class="topbar">
+      <form id="searchForm" class="search-card" role="search">
+        <span class="brand" aria-hidden="true">N</span>
+        <input id="searchInput" type="search" placeholder="搜索韩国地点（中文 / 韩文）" autocomplete="off" />
+        <button id="clearBtn" class="icon-button hidden" type="button" aria-label="清除">×</button>
+        <button class="search-button" type="submit">搜索</button>
+      </form>
+      <div class="quick-row" aria-label="快捷地点">
+        <button data-place="首尔站">首尔站</button>
+        <button data-place="明洞">明洞</button>
+        <button data-place="景福宫">景福宫</button>
+        <button data-place="弘大入口">弘大</button>
+        <button data-place="釜山海云台">海云台</button>
+      </div>
+      <div id="locationStatus" class="location-status">○ 尚未获取当前位置</div>
+    </header>
+
+    <aside id="apiNotice" class="api-notice ready-notice">
+      <strong>Kakao Map · 中文操作版</strong>
+      <span>先点击右下角定位，再搜索要去的地方。</span>
+    </aside>
+
+    <button id="locateBtn" class="floating-button locate" type="button" aria-label="定位到当前位置">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2h-2.06ZM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
+    </button>
+
+    <section id="placeSheet" class="place-sheet hidden" aria-live="polite">
+      <div class="sheet-handle"></div>
+      <button id="closeSheet" class="sheet-close" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">搜索结果</p>
+      <h1 id="placeName">地点</h1>
+      <p id="placeAddress" class="address"></p>
+      <div class="route-modes" aria-label="出行方式">
+        <button type="button" data-mode="traffic" class="active">公交</button>
+        <button type="button" data-mode="walk">步行</button>
+        <button type="button" data-mode="car">驾车</button>
+        <button type="button" data-mode="bicycle">骑行</button>
+      </div>
+      <div class="action-grid">
+        <button id="centerBtn" class="secondary-action" type="button">在地图居中</button>
+        <button id="naverBtn" class="primary-action" type="button">开始导航</button>
+      </div>
+    </section>
+
+    <nav class="bottom-nav" aria-label="主要导航">
+      <button class="active" type="button"><span>⌖</span>地图</button>
+      <button id="savedBtn" type="button"><span>♡</span>收藏</button>
+      <button id="helpBtn" type="button"><span>?</span>使用说明</button>
+    </nav>
+    <div id="toast" class="toast hidden" role="status"></div>
+  </main>
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=6262287017a165df3218835bb0e84bde&libraries=services&autoload=false"></script>
+  <script src="app.js"></script>
+</body>
+</html>
