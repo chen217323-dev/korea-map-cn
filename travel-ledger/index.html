@@ -54,7 +54,7 @@ function localCheckpoint(force){
   if(!okay(S))return;
   var copies=read(BACKUPK,[]);if(!Array.isArray(copies))copies=[];
   var lastCopy=copies[copies.length-1];
-  if(!force&&lastCopy&&Date.now()-lastCopy.at<24*60*60*1000)return;
+  if(!force&&lastCopy&&JSON.stringify(lastCopy.snapshot)===JSON.stringify(S))return;
   copies.push({at:Date.now(),snapshot:clone(S)});
   var limit=JSON.stringify(S).length>650000?1:3;
   localStorage.setItem(BACKUPK,JSON.stringify(copies.slice(-limit)))
@@ -66,8 +66,8 @@ function localBackupText(){
 }
 function restoreLocal(){
  var copies=read(BACKUPK,[]);if(!Array.isArray(copies))copies=[];
- var item=copies.slice().reverse().find(function(c){return c&&okay(c.snapshot)});
- if(!item){inform('本机还没有可恢复的历史备份');return}
+ var item=copies.slice().reverse().find(function(c){return c&&okay(c.snapshot)&&JSON.stringify(c.snapshot)!==JSON.stringify(S)});
+ if(!item){inform('暂无与当前账本不同的历史版本可恢复');return}
  if(!confirm('恢复 '+new Date(item.at).toLocaleString('zh-CN')+' 的本机历史备份？这将覆盖现在的账目，并在联网后同步到云端。请先导出当前完整备份。'))return;
  localCheckpoint(true);S=clone(item.snapshot);save();inform('已恢复本机历史备份，请检查账目')
 }
