@@ -1,0 +1,10 @@
+{
+  "name": "同行账本 · 韩国三人游",
+  "short_name": "同行账本",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f0f5ff",
+  "theme_color": "#1754cc",
+  "description": "韩国旅游唐、陈、坤三人记账，支持 Supabase 云端备份。"
+}
