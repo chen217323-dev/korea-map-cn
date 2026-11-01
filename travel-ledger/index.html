@@ -78,6 +78,38 @@ body{font-size:16px;line-height:1.55}.app{max-width:760px;padding-left:17px;padd
 .shared-row-title{font-size:16px;font-weight:850;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .shared-row-amount{font-size:17px;font-weight:900;color:#1759bd;white-space:nowrap}
 .shared-row-people{font-size:13px;color:#7185a8;margin:6px 0 0;line-height:1.6}
+
+/* 每个人的账单：个人消费与共同分摊分别列明 */
+.person-ledger-summary{display:grid;gap:10px;margin:12px 0 18px}
+.person-total-card{background:linear-gradient(135deg,#174aa8,#287de5);color:#fff;border-radius:18px;padding:17px;box-shadow:0 8px 20px #1755b51c}
+.person-total-title{font-size:17px;font-weight:900;margin-bottom:12px}
+.person-total-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.person-total-cell{background:#ffffff19;border:1px solid #ffffff2a;border-radius:13px;padding:12px 10px;min-width:0}
+.person-total-cell small{display:block;font-size:12px;opacity:.88}
+.person-total-cell strong{display:block;font-size:clamp(17px,4.7vw,23px);line-height:1.4;overflow-wrap:anywhere;margin-top:3px}
+.person-total-cell em{display:block;font-style:normal;font-size:11px;line-height:1.55;opacity:.9;margin-top:5px}
+.person-total-foot{font-size:11px;opacity:.82;margin-top:11px}
+.person-ledger-pair{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.person-ledger-card{background:#fff;border:1px solid #dfe9f8;border-radius:15px;padding:13px 11px;min-width:0}
+.person-ledger-card h3{font-size:15px;margin:0 0 3px;color:#1b3e75}
+.person-ledger-card>small{display:block;color:#8091ad;font-size:11px;margin-bottom:9px}
+.person-ledger-card .ledger-value{display:flex;flex-direction:column;gap:3px;padding:7px 0;border-top:1px solid #edf2fa}
+.person-ledger-card .ledger-value span{font-size:11px;color:#7185a7}
+.person-ledger-card .ledger-value b{font-size:14px;color:#1758ba;overflow-wrap:anywhere}
+.person-shared-row{padding:15px 2px;border-bottom:1px solid #edf2fc;cursor:pointer}
+.person-shared-row:last-child{border-bottom:0}
+.person-shared-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.person-shared-title{font-size:16px;font-weight:850;color:#19365f;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person-shared-date{font-size:11px;color:#8292ad;white-space:nowrap;flex-shrink:0}
+.person-shared-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.person-shared-total,.person-shared-own{background:#f1f6ff;border-radius:11px;padding:9px 10px;min-width:0}
+.person-shared-meta small{display:block;font-size:10px;color:#7286a8;margin-bottom:3px}
+.person-shared-meta b{display:block;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.person-shared-own{background:#e8f3ff;border:1px solid #cfe3ff}
+.person-shared-own b{color:#1558bd}
+.person-shared-people{font-size:11px;color:#7588a8;line-height:1.6;margin-top:8px}
+@media(max-width:390px){.person-ledger-pair{gap:7px}.person-ledger-card{padding:11px 8px}.person-ledger-card h3{font-size:14px}.person-ledger-card .ledger-value b{font-size:12px}.person-shared-meta{gap:6px}.person-shared-total,.person-shared-own{padding:8px 7px}}
+
 @media(max-width:390px){.nav button{font-size:10px}.nav button span{font-size:21px}.shared-person-cards{gap:6px}.shared-person-card{padding:10px 7px}.shared-person-card strong{font-size:14px}.cat{padding:14px 10px}}
 </style></head><body>
 <div class="app">
@@ -85,9 +117,27 @@ body{font-size:16px;line-height:1.55}.app{max-width:760px;padding-left:17px;padd
 <div id="alert-slot"></div>
 <section id="pane-home" class="pane active"><div class="section-title"><h2>消费快捷记账</h2><small>选择分类开始</small></div><div class="cats"><button class="cat" data-cat="food"><span class="em">🍜</span><span><strong>吃</strong><small>餐食 · 小吃</small></span></button><button class="cat" data-cat="drink"><span class="em">🥤</span><span><strong>喝</strong><small>咖啡 · 饮料</small></span></button><button class="cat" data-cat="play"><span class="em">🎡</span><span><strong>玩</strong><small>门票 · 交通</small></span></button><button class="cat" data-cat="shopping"><span class="em">🛍️</span><span><strong>购物</strong><small>商品 · 伴手礼</small></span></button><button class="cat" data-cat="stay"><span class="em">🏨</span><span><strong>住宿</strong><small>酒店 · 民宿</small></span></button></div><div class="section-title"><h2>三位游客消费总览</h2><button class="link" data-view="shared">查看共同分摊 →</button></div><div id="people-cards"></div><div class="section-title"><h2>最近记账</h2><button class="link" data-view="shared">共同分摊 →</button></div><div class="box" id="recent"></div><div class="row" style="margin-top:14px"><button class="btn primary full" data-action="expense">＋ 添加一笔消费</button></div></section>
 
-<section id="pane-person-t1" class="pane"><div class="person-page-head"><h2>唐 · 个人消费</h2><button class="btn primary" data-person="t1">＋ 记一笔</button></div><div class="subtle">这里只显示唐自己承担的消费；多人一起花的钱统一放在「共同分摊」页，不会重复混在这里。</div><div id="person-t1-summary" class="person-page-summary"></div><div id="person-t1-entries" class="large-list"></div></section>
-<section id="pane-person-t2" class="pane"><div class="person-page-head"><h2>陈 · 个人消费</h2><button class="btn primary" data-person="t2">＋ 记一笔</button></div><div class="subtle">这里只显示陈自己承担的消费；多人一起花的钱统一放在「共同分摊」页，不会重复混在这里。</div><div id="person-t2-summary" class="person-page-summary"></div><div id="person-t2-entries" class="large-list"></div></section>
-<section id="pane-person-t3" class="pane"><div class="person-page-head"><h2>坤 · 个人消费</h2><button class="btn primary" data-person="t3">＋ 记一笔</button></div><div class="subtle">这里只显示坤自己承担的消费；多人一起花的钱统一放在「共同分摊」页，不会重复混在这里。</div><div id="person-t3-summary" class="person-page-summary"></div><div id="person-t3-entries" class="large-list"></div></section>
+<section id="pane-person-t1" class="pane">
+ <div class="person-page-head"><h2>唐 · 个人账单</h2><button class="btn primary" data-person="t1">＋ 记一笔</button></div>
+ <div class="subtle">这里同时统计唐自己的个人消费，以及共同消费中分到唐头上的金额。上方看总承担，下面分开看每一笔，不会把整笔共同消费重复算给唐。</div>
+ <div id="person-t1-summary" class="person-ledger-summary"></div>
+ <div class="section-title"><h2>个人消费明细</h2><small id="person-t1-personal-count"></small></div><div id="person-t1-entries" class="large-list"></div>
+ <div class="section-title"><h2>共同分摊明细</h2><small id="person-t1-shared-count"></small></div><div id="person-t1-shared-entries" class="large-list"></div>
+</section>
+<section id="pane-person-t2" class="pane">
+ <div class="person-page-head"><h2>陈 · 个人账单</h2><button class="btn primary" data-person="t2">＋ 记一笔</button></div>
+ <div class="subtle">这里同时统计陈自己的个人消费，以及共同消费中分到陈头上的金额。上方看总承担，下面分开看每一笔，不会把整笔共同消费重复算给陈。</div>
+ <div id="person-t2-summary" class="person-ledger-summary"></div>
+ <div class="section-title"><h2>个人消费明细</h2><small id="person-t2-personal-count"></small></div><div id="person-t2-entries" class="large-list"></div>
+ <div class="section-title"><h2>共同分摊明细</h2><small id="person-t2-shared-count"></small></div><div id="person-t2-shared-entries" class="large-list"></div>
+</section>
+<section id="pane-person-t3" class="pane">
+ <div class="person-page-head"><h2>坤 · 个人账单</h2><button class="btn primary" data-person="t3">＋ 记一笔</button></div>
+ <div class="subtle">这里同时统计坤自己的个人消费，以及共同消费中分到坤头上的金额。上方看总承担，下面分开看每一笔，不会把整笔共同消费重复算给坤。</div>
+ <div id="person-t3-summary" class="person-ledger-summary"></div>
+ <div class="section-title"><h2>个人消费明细</h2><small id="person-t3-personal-count"></small></div><div id="person-t3-entries" class="large-list"></div>
+ <div class="section-title"><h2>共同分摊明细</h2><small id="person-t3-shared-count"></small></div><div id="person-t3-shared-entries" class="large-list"></div>
+</section>
 
 <section id="pane-shared" class="pane">
  <div class="person-page-head"><h2>共同分摊</h2><button class="btn primary" data-action="shared-expense">＋ 记共同消费</button></div>
@@ -239,7 +289,7 @@ function peopleCard(p){
  var breakdown=Object.keys(CATS).map(function(k){return '<div class="summary-line" style="padding:8px 0"><span>'+CATS[k][1]+' '+CATS[k][0]+'</span><span style="font-size:13px;font-weight:750">'+dual(p.cats[k]||emptyMoney())+'</span></div>'}).join('');
  return '<div class="box"><div class="trav-head"><div class="avatar">'+escapeHtml(p.name.slice(0,1))+'</div><div class="grow"><b>'+escapeHtml(p.name)+'</b><div class="hint">本人承担合计（个人消费 + 共同分摊）</div></div><button class="btn small" data-person="'+escapeHtml(p.id)+'">＋记账</button></div>'+
  '<div class="balance" style="display:block;margin-top:13px"><div style="font-size:13px;opacity:.85">韩元承担 · 折合人民币</div><div>'+moneyHtml('KRW',p.total.KRW)+'</div><div style="height:9px"></div><div style="font-size:13px;opacity:.85">人民币实际消费</div><div>'+moneyHtml('CNY',p.total.CNY)+'</div></div>'+
- '<div style="margin-top:10px">'+breakdown+'</div><button class="btn full" data-open-person="'+escapeHtml(p.id)+'" style="margin-top:12px">查看'+escapeHtml(p.name)+'个人消费明细 →</button></div>'
+ '<div style="margin-top:10px">'+breakdown+'</div><button class="btn full" data-open-person="'+escapeHtml(p.id)+'" style="margin-top:12px">查看'+escapeHtml(p.name)+'个人账单明细 →</button></div>'
 }
 function renderDetailRow(t,who){
  var c=currencyOf(t),category=CATS[t.category]||CATS.play,sh=nativeShares(t);
@@ -272,15 +322,33 @@ function renderHistory(){
 }
 function renderPersonalRow(t,id){
  var c=currencyOf(t),cat=CATS[t.category]||CATS.play,sh=nativeShares(t),amount=units(c,sh[id]||0);
- var note=cat[0]+' · '+(t.note||'个人消费');
- return '<div class="detail-row" data-edit="'+escapeHtml(t.id)+'"><span class="detail-emoji">'+cat[1]+'</span><span class="detail-main"><b>'+escapeHtml(t.title)+'</b><small>'+escapeHtml(t.date)+' · '+escapeHtml(note)+'</small></span><span class="detail-amount">'+moneyHtml(c,amount)+'</span></div>'
+ var note=cat[0]+(t.note?' · '+t.note:'');
+ return '<div class="detail-row" data-edit="'+escapeHtml(t.id)+'"><span class="detail-emoji">'+cat[1]+'</span><span class="detail-main"><b>'+escapeHtml(t.title)+'</b><small>'+escapeHtml(t.date)+' · 个人消费 · '+escapeHtml(note)+'</small></span><span class="detail-amount">'+moneyHtml(c,amount)+'</span></div>'
+}
+function renderPersonSharedRow(t,id){
+ var c=currencyOf(t),cat=CATS[t.category]||CATS.play,sh=nativeShares(t),mine=units(c,sh[id]||0),total=units(c,t.originalAmount);
+ var names=participantIds(t).map(function(pid){return personName(pid)+' '+cash(c,units(c,sh[pid]||0))}).join('、');
+ return '<div class="person-shared-row" data-edit="'+escapeHtml(t.id)+'"><div class="person-shared-head"><span class="person-shared-title">'+cat[1]+' '+escapeHtml(t.title)+'</span><span class="person-shared-date">'+escapeHtml(t.date)+'</span></div><div class="person-shared-meta"><div class="person-shared-total"><small>整笔共同消费</small><b>'+escapeHtml(cash(c,total))+'</b></div><div class="person-shared-own"><small>本人分摊 · 计入个人总承担</small><b>'+escapeHtml(cash(c,mine))+'</b></div></div><div class="person-shared-people">参与人及各自金额：'+escapeHtml(names)+(t.note?' · '+escapeHtml(t.note):'')+'</div></div>'
 }
 function renderPersonPages(){
  S.travelers.forEach(function(p){
-  var records=sorted().filter(function(t){return entryModeOf(t)==='personal'&&units(currencyOf(t),nativeShares(t)[p.id]||0)>0});
-  var sums=emptyMoney();records.forEach(function(t){var c=currencyOf(t);sums[c]+=units(c,nativeShares(t)[p.id]||0)});
-  $('person-'+p.id+'-summary').innerHTML='<div class="history-total"><span>韩元个人消费 · 折合人民币</span><strong>'+moneyHtml('KRW',sums.KRW)+'</strong></div><div class="history-total"><span>人民币个人消费</span><strong>'+moneyHtml('CNY',sums.CNY)+'</strong></div>';
-  $('person-'+p.id+'-entries').innerHTML=records.map(function(t){return renderPersonalRow(t,p.id)}).join('')||'<div class="detail-empty">还没有'+escapeHtml(p.name)+'的个人消费记录</div>';
+  var personal=sorted().filter(function(t){return entryModeOf(t)==='personal'&&units(currencyOf(t),nativeShares(t)[p.id]||0)>0});
+  var shared=sorted().filter(function(t){return entryModeOf(t)==='shared'&&units(currencyOf(t),nativeShares(t)[p.id]||0)>0});
+  var own=emptyMoney(),allocated=emptyMoney();
+  personal.forEach(function(t){var c=currencyOf(t);own[c]+=units(c,nativeShares(t)[p.id]||0)});
+  shared.forEach(function(t){var c=currencyOf(t);allocated[c]+=units(c,nativeShares(t)[p.id]||0)});
+  var total={KRW:own.KRW+allocated.KRW,CNY:own.CNY+allocated.CNY};
+  $('person-'+p.id+'-summary').innerHTML=
+   '<div class="person-total-card"><div class="person-total-title">'+escapeHtml(p.name)+' · 本人承担总计</div><div class="person-total-grid">'+
+   '<div class="person-total-cell"><small>韩元承担总额</small><strong>'+escapeHtml(cash('KRW',total.KRW))+'</strong><em>个人 '+escapeHtml(cash('KRW',own.KRW))+'<br>分摊 '+escapeHtml(cash('KRW',allocated.KRW))+'</em></div>'+
+   '<div class="person-total-cell"><small>人民币承担总额</small><strong>'+escapeHtml(cash('CNY',total.CNY))+'</strong><em>个人 '+escapeHtml(cash('CNY',own.CNY))+'<br>分摊 '+escapeHtml(cash('CNY',allocated.CNY))+'</em></div>'+
+   '</div><div class="person-total-foot">总承担 = 个人消费 + 共同消费中本人应承担的份额</div></div>'+
+   '<div class="person-ledger-pair"><div class="person-ledger-card"><h3>个人消费</h3><small>自己单独承担</small><div class="ledger-value"><span>韩元</span><b>'+escapeHtml(cash('KRW',own.KRW))+'</b></div><div class="ledger-value"><span>人民币</span><b>'+escapeHtml(cash('CNY',own.CNY))+'</b></div></div>'+
+   '<div class="person-ledger-card"><h3>共同分摊</h3><small>只计算分到本人头上的金额</small><div class="ledger-value"><span>韩元</span><b>'+escapeHtml(cash('KRW',allocated.KRW))+'</b></div><div class="ledger-value"><span>人民币</span><b>'+escapeHtml(cash('CNY',allocated.CNY))+'</b></div></div></div>';
+  $('person-'+p.id+'-personal-count').textContent=personal.length+' 笔';
+  $('person-'+p.id+'-shared-count').textContent=shared.length+' 笔';
+  $('person-'+p.id+'-entries').innerHTML=personal.map(function(t){return renderPersonalRow(t,p.id)}).join('')||'<div class="detail-empty">还没有'+escapeHtml(p.name)+'的个人消费记录</div>';
+  $('person-'+p.id+'-shared-entries').innerHTML=shared.map(function(t){return renderPersonSharedRow(t,p.id)}).join('')||'<div class="detail-empty">还没有分摊到'+escapeHtml(p.name)+'的共同消费</div>';
  });
 }
 function renderSharedRow(t){
