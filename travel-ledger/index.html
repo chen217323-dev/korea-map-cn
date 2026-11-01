@@ -79,6 +79,13 @@ body{font-size:16px;line-height:1.55}.app{max-width:760px;padding-left:17px;padd
 .shared-row-amount{font-size:17px;font-weight:900;color:#1759bd;white-space:nowrap}
 .shared-row-people{font-size:13px;color:#7185a8;margin:6px 0 0;line-height:1.6}
 
+/* 金额自动核对 */
+.amount-audit{margin:12px 0 16px;padding:13px 15px;border-radius:14px;border:1px solid #cfe8d9;background:#f0faf4;color:#17643a;font-size:14px}
+.amount-audit b{font-size:15px}
+.amount-audit small{display:block;margin-top:4px;font-size:12px;line-height:1.5;color:#567b66}
+.amount-audit.warn{border-color:#f1d2c8;background:#fff5f1;color:#a23e28}
+.amount-audit.warn small{color:#986454}
+.amount-audit-issue{padding:8px 0;border-top:1px solid #f1ddd6;margin-top:7px;font-size:12px;line-height:1.5;cursor:pointer}
 /* 每个人的账单：个人消费与共同分摊分别列明 */
 .person-ledger-summary{display:grid;gap:10px;margin:12px 0 18px}
 .person-total-card{background:linear-gradient(135deg,#174aa8,#287de5);color:#fff;border-radius:18px;padding:17px;box-shadow:0 8px 20px #1755b51c}
@@ -115,6 +122,7 @@ body{font-size:16px;line-height:1.55}.app{max-width:760px;padding-left:17px;padd
 <div class="app">
 <header class="top"><div class="topline"><div><div class="brand">✈ 同行账本</div><small>KOREA TRIP · EXPENSE TRACKER</small></div><div class="status" id="sync-label">● 本机已保存</div></div><h1 id="trip-head">韩国三人自由行</h1><p>独立统计人民币与韩元 · 只记录三位游客消费</p><div class="hero-stats"><div class="hero-stat"><small>三人累计 · 韩元</small><strong id="total-krw">₩0</strong></div><div class="hero-stat"><small>三人累计 · 人民币</small><strong id="total-cny">¥0.00</strong></div></div></header>
 <div id="alert-slot"></div>
+<div id="amount-audit-slot" aria-live="polite"></div>
 <section id="pane-home" class="pane active"><div class="section-title"><h2>消费快捷记账</h2><small>选择分类开始</small></div><div class="cats"><button class="cat" data-cat="food"><span class="em">🍜</span><span><strong>吃</strong><small>餐食 · 小吃</small></span></button><button class="cat" data-cat="drink"><span class="em">🥤</span><span><strong>喝</strong><small>咖啡 · 饮料</small></span></button><button class="cat" data-cat="play"><span class="em">🎡</span><span><strong>玩</strong><small>门票 · 交通</small></span></button><button class="cat" data-cat="shopping"><span class="em">🛍️</span><span><strong>购物</strong><small>商品 · 伴手礼</small></span></button><button class="cat" data-cat="stay"><span class="em">🏨</span><span><strong>住宿</strong><small>酒店 · 民宿</small></span></button></div><div class="section-title"><h2>三位游客消费总览</h2><button class="link" data-view="shared">查看共同分摊 →</button></div><div id="people-cards"></div><div class="section-title"><h2>最近记账</h2><button class="link" data-view="shared">共同分摊 →</button></div><div class="box" id="recent"></div><div class="row" style="margin-top:14px"><button class="btn primary full" data-action="expense">＋ 添加一笔消费</button></div></section>
 
 <section id="pane-person-t1" class="pane">
@@ -183,6 +191,7 @@ var S=read(K,null);
 if(!okay(S)){var backups=read(BACKUPK,[]);var found=Array.isArray(backups)?backups.slice().reverse().find(function(x){return x&&okay(x.snapshot)}):null;S=found?clone(found.snapshot):def()}
 var OPS=read(OPSK,[]);if(!Array.isArray(OPS))OPS=[];
 var session=read(AUTHK,null),syncing=false,connected=false,cloudLabel='',syncTimer=null,view='home',historyPerson='all',editId=null,recordMode='expense';
+var savingRecord=false;
 var last=clone(S),toastTimer;
 var fx=read(FXK,null);
 if(!fx||!(Number(fx.rate)>0))fx={rate:0.00499273,date:'2026-11-01',updatedAt:0,source:'备用参考汇率'};
@@ -257,6 +266,43 @@ function nativeShares(t){
 }
 function participantIds(t){var sh=nativeShares(t),c=currencyOf(t);return Object.keys(sh).filter(function(id){return units(c,sh[id])>0})}
 function entryModeOf(t){return t.entryMode||(participantIds(t).length>1?'shared':'personal')}
+function auditLedger(){
+ var issues=[],count=0,gross={KRW:0,CNY:0},allocated={KRW:0,CNY:0};
+ S.transactions.forEach(function(t){
+  if(t.type!=='expense')return;
+  count++;
+  var c=currencyOf(t),amount=Number(t.originalAmount),total=units(c,amount),sh=nativeShares(t);
+  var ids=['t1','t2','t3'],sum=0,participants=0,badShare=false;
+  if(!(amount>0)||!precise(amount,c))issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'原始金额无效或小数位超出限制'});
+  ids.forEach(function(id){
+   var value=Number(sh[id]),small=units(c,value);
+   if(!Number.isFinite(value)||!precise(value,c)||value<0){badShare=true}
+   if(small>0)participants++;
+   sum+=small;
+   allocated[c]+=small;
+  });
+  gross[c]+=total;
+  if(badShare)issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'某位游客的分摊金额无效'});
+  if(sum!==total)issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'分摊合计 '+cash(c,sum)+' 与整笔金额 '+cash(c,total)+' 不一致'});
+  var mode=entryModeOf(t);
+  if(mode==='personal'&&participants!==1)issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'个人消费必须且只能归属一位游客'});
+  if(mode==='shared'&&participants<2)issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'共同分摊至少需要两位参与者'});
+  if(mode!=='personal'&&mode!=='shared')issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'消费类型无法识别'});
+ });
+ ['KRW','CNY'].forEach(function(c){if(gross[c]!==allocated[c])issues.push({id:'',title:c==='KRW'?'韩元汇总':'人民币汇总',date:'',message:'所有游客承担合计与账本原始金额总计不一致'})});
+ return {count:count,issues:issues,gross:gross,allocated:allocated};
+}
+function renderAmountAudit(){
+ var node=$('amount-audit-slot');if(!node)return;
+ var result=auditLedger();
+ if(!result.issues.length){
+  node.innerHTML='<div class="amount-audit"><b>✓ 金额自动核对通过</b><small>已检查 '+result.count+' 笔记录。每笔原始金额均与个人承担及共同分摊合计一致；韩元、人民币分别核对，不混算。</small></div>';
+  return;
+ }
+ node.innerHTML='<div class="amount-audit warn"><b>⚠ 有 '+result.issues.length+' 项金额需要核对</b><small>系统不会自动改动或猜测金额。点击具体记录可打开编辑，请核对原始凭证后再修改。</small>'+
+ result.issues.slice(0,8).map(function(issue){return '<div class="amount-audit-issue" '+(issue.id?'data-edit="'+escapeHtml(issue.id)+'"':'')+'><b>'+escapeHtml(issue.title)+'</b> '+escapeHtml(issue.date)+'<br>'+escapeHtml(issue.message)+'</div>'}).join('')+
+ (result.issues.length>8?'<small>另有 '+(result.issues.length-8)+' 项未展开。</small>':'')+'</div>';
+}
 function acc(){
  var ps={t1:{total:emptyMoney(),count:0,cats:{}},t2:{total:emptyMoney(),count:0,cats:{}},t3:{total:emptyMoney(),count:0,cats:{}}};
  var total=emptyMoney(),today=emptyMoney(),categories=Object.keys(CATS).reduce(function(o,k){o[k]=emptyMoney();return o},{}),count=0;
@@ -371,7 +417,7 @@ function draw(){
  $('total-krw').innerHTML=moneyHtml('KRW',a.total.KRW);$('total-cny').textContent=cash('CNY',a.total.CNY);
  $('people-cards').innerHTML=S.travelers.map(function(p){return peopleCard(Object.assign({name:p.name,id:p.id},a.ps[p.id]))}).join('');
  $('recent').innerHTML=sorted().slice(0,6).map(itemHtml).join('')||'<div class="empty">🧾 还没有消费记录，选择上面的分类开始。</div>';
- renderPersonPages();renderSharedPage();
+ renderPersonPages();renderSharedPage();renderAmountAudit();
 }
 function label(){var msg;if(!session){msg='● 本机已保存 · 云端未登录';cloudLabel='数据仅在本机'}else if(!navigator.onLine){msg='● 离线 · '+OPS.length+' 笔修改待上传';cloudLabel='离线待同步（'+OPS.length+'）'}else if(syncing){msg='◌ 正在同步云端';cloudLabel='正在同步'}else if(OPS.length){msg='● 本机已保存 · '+OPS.length+' 项待同步';cloudLabel='待同步 '+OPS.length+' 项'}else if(connected){msg='✓ 已同步云端';cloudLabel='✓ 本机和云端已同步'}else{msg='● 云端未连接';cloudLabel='尚未完成云端连接'}
 $('sync-label').textContent=msg;$('cloud-state').textContent=cloudLabel;var lastSync=Number(localStorage.getItem(SYNCK)||0);$('last-sync').textContent=lastSync?'最近云端同步：'+new Date(lastSync).toLocaleString('zh-CN'):'尚未验证云端同步成功';$('backup-status').textContent=localBackupText();
@@ -423,7 +469,9 @@ function apport(total,weights){
  var out=[0,0,0];parts.forEach(function(p){out[p.i]=p.n});return {t1:out[0],t2:out[1],t3:out[2]}
 }
 function saveRecord(e){
- e.preventDefault();var c=$('f-currency').value,amt=Number($('f-amount').value),small=units(c,amt),mode=$('f-entry-mode').value;
+ e.preventDefault();if(savingRecord)return;savingRecord=true;
+ try{
+ var c=$('f-currency').value,amt=Number($('f-amount').value),small=units(c,amt),mode=$('f-entry-mode').value;
  if(!(amt>0)||!precise(amt,c)||!(small>0)){inform(c==='CNY'?'人民币请填写最多两位小数的金额':'韩元必须输入整数金额');return}
  var assigned={t1:0,t2:0,t3:0},custom=false;
  if(mode==='personal'){
@@ -439,11 +487,17 @@ function saveRecord(e){
   if(custom){if(sum!==small){inform('每个人填写的分摊金额相加，必须等于总金额');return}}
   else assigned=apport(small,weights);
  }
+ if(mode!=='personal'&&mode!=='shared'){inform('请选择正确的消费类型');return}
+ var assignedSum=assigned.t1+assigned.t2+assigned.t3;
+ if(assignedSum!==small||['t1','t2','t3'].some(function(id){return !Number.isInteger(assigned[id])||assigned[id]<0})){
+  inform('金额核对未通过：每个人的金额相加必须等于整笔金额');return
+ }
  var nativeShares={t1:assigned.t1/scale(c),t2:assigned.t2/scale(c),t3:assigned.t3/scale(c)};
  var old=editId?S.transactions.find(function(x){return x.id===editId}):null;
  var t={id:editId||uid(),type:'expense',date:$('f-date').value,title:$('f-title').value.trim(),note:$('f-note').value.trim(),category:$('f-cat').value,originalAmount:amt,currency:c,amountKRW:c==='KRW'?amt:0,shares:c==='KRW'?{t1:assigned.t1,t2:assigned.t2,t3:assigned.t3}:{t1:0,t2:0,t3:0},nativeShares:nativeShares,entryMode:mode,splitMode:custom?'custom':'equal',splitOriginal:custom?nativeShares:null,createdAt:old?old.createdAt||Date.now():Date.now()};
  if(!t.title||!t.date){inform('请填写消费项目和日期');return}
- S.transactions=S.transactions.filter(function(x){return x.id!==t.id});S.transactions.push(t);save();closeModal();inform('✓ 已保存'+(session?'，待云端同步':''))
+ S.transactions=S.transactions.filter(function(x){return x.id!==t.id});S.transactions.push(t);save();closeModal();inform('✓ 已保存，金额核对通过'+(session?'，待云端同步':''))
+ }finally{savingRecord=false}
 }
 function settleText(){
  var a=acc(),txt='【'+S.tripName+' · 消费汇总】\n韩元合计：'+cash('KRW',a.total.KRW)+'\n人民币合计：'+cash('CNY',a.total.CNY)+'\n消费笔数：'+a.count+'\n';
