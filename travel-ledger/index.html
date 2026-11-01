@@ -178,7 +178,7 @@ var moneyHtml=function(c,amountInSmallUnits){if(c==='CNY')return '<span class="m
 var dual=function(pair){return cash('KRW',pair&&pair.KRW||0)+'  ·  '+cash('CNY',pair&&pair.CNY||0)};
 var emptyMoney=function(){return {KRW:0,CNY:0}};
 var currencyOf=function(t){return t.currency==='CNY'?'CNY':'KRW'};
-var precise=function(n,c){return Number.isFinite(n)&&n>=0&&Math.abs(n*scale(c)-Math.round(n*scale(c)))<0.000001};
+var precise=function(n,c){var scaled=Number(n)*scale(c),rounded=Math.round(scaled);return Number.isFinite(n)&&n>=0&&Number.isSafeInteger(rounded)&&Math.abs(scaled-rounded)<0.000001};
 var signed=function(n){return (n<0?'-':'')+kr(n)};
 var date=function(){var d=new Date();return [d.getFullYear(),('0'+(d.getMonth()+1)).slice(-2),('0'+d.getDate()).slice(-2)].join('-')};
 var uid=function(){return crypto.randomUUID?crypto.randomUUID():'i'+Date.now()+Math.random().toString(36).slice(2)};
@@ -289,7 +289,7 @@ function auditLedger(){
   if(mode==='shared'&&participants<2)issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'共同分摊至少需要两位参与者'});
   if(mode!=='personal'&&mode!=='shared')issues.push({id:t.id,title:t.title||'未命名记录',date:t.date||'',message:'消费类型无法识别'});
  });
- ['KRW','CNY'].forEach(function(c){if(gross[c]!==allocated[c])issues.push({id:'',title:c==='KRW'?'韩元汇总':'人民币汇总',date:'',message:'所有游客承担合计与账本原始金额总计不一致'})});
+ ['KRW','CNY'].forEach(function(c){if(!Number.isSafeInteger(gross[c])||!Number.isSafeInteger(allocated[c]))issues.push({id:'',title:c==='KRW'?'韩元汇总':'人民币汇总',date:'',message:'汇总金额超出安全计算范围，请分段核对'});if(gross[c]!==allocated[c])issues.push({id:'',title:c==='KRW'?'韩元汇总':'人民币汇总',date:'',message:'所有游客承担合计与账本原始金额总计不一致'})});
  return {count:count,issues:issues,gross:gross,allocated:allocated};
 }
 function renderAmountAudit(){
@@ -472,7 +472,7 @@ function saveRecord(e){
  e.preventDefault();if(savingRecord)return;savingRecord=true;
  try{
  var c=$('f-currency').value,amt=Number($('f-amount').value),small=units(c,amt),mode=$('f-entry-mode').value;
- if(!(amt>0)||!precise(amt,c)||!(small>0)){inform(c==='CNY'?'人民币请填写最多两位小数的金额':'韩元必须输入整数金额');return}
+ if(!(amt>0)||!precise(amt,c)||!(small>0)||!Number.isSafeInteger(small)){inform(c==='CNY'?'人民币请填写最多两位小数的金额':'韩元必须输入整数金额');return}
  var assigned={t1:0,t2:0,t3:0},custom=false;
  if(mode==='personal'){
   var owner=$('f-person').value;if(!assigned.hasOwnProperty(owner)){inform('请选择消费人');return}assigned[owner]=small;
@@ -489,7 +489,7 @@ function saveRecord(e){
  }
  if(mode!=='personal'&&mode!=='shared'){inform('请选择正确的消费类型');return}
  var assignedSum=assigned.t1+assigned.t2+assigned.t3;
- if(assignedSum!==small||['t1','t2','t3'].some(function(id){return !Number.isInteger(assigned[id])||assigned[id]<0})){
+ if(!Number.isSafeInteger(assignedSum)||assignedSum!==small||['t1','t2','t3'].some(function(id){return !Number.isSafeInteger(assigned[id])||assigned[id]<0})){
   inform('金额核对未通过：每个人的金额相加必须等于整笔金额');return
  }
  var nativeShares={t1:assigned.t1/scale(c),t2:assigned.t2/scale(c),t3:assigned.t3/scale(c)};
