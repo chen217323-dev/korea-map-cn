@@ -241,7 +241,7 @@ function peopleCard(p){
  '<div class="balance" style="display:block;margin-top:13px"><div style="font-size:13px;opacity:.85">韩元承担 · 折合人民币</div><div>'+moneyHtml('KRW',p.total.KRW)+'</div><div style="height:9px"></div><div style="font-size:13px;opacity:.85">人民币实际消费</div><div>'+moneyHtml('CNY',p.total.CNY)+'</div></div>'+
  '<div style="margin-top:10px">'+breakdown+'</div><button class="btn full" data-open-person="'+escapeHtml(p.id)+'" style="margin-top:12px">查看'+escapeHtml(p.name)+'个人消费明细 →</button></div>'
 }
-function renderDetailRow(t,who){function renderDetailRow(t,who){
+function renderDetailRow(t,who){
  var c=currencyOf(t),category=CATS[t.category]||CATS.play,sh=nativeShares(t);
  var ownerAmount=who==='all'?units(c,t.originalAmount):units(c,sh[who]||0);
  var participants=Object.keys(sh).filter(function(k){return units(c,sh[k])>0});
